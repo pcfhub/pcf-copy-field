@@ -1,0 +1,73 @@
+{
+  "schemaVersion": 1,
+
+  "slug": "pcf-copy-field",
+  "name": "Copy Field",
+  "tagline": "A text column with a copy-to-clipboard button and a confirmation.",
+  "category": "utilities",
+  "tags": ["clipboard", "accessibility", "read-only", "field"],
+
+  "control": {
+    "namespace": "PCFHub",
+    "constructor": "CopyField",
+    "type": "field",
+    "framework": "standard",
+    "manifestPath": "CopyField/ControlManifest.Input.xml"
+  },
+
+  "links": {
+    "homepage": "https://github.com/pcfhub/pcf-copy-field",
+    "support": "https://github.com/pcfhub/pcf-copy-field/issues",
+    "license": "MIT"
+  },
+
+  "docs": {
+    "path": "docs"
+  },
+
+  "media": {
+    "logo": "media/logo.png",
+    "screenshots": []
+  },
+
+  "demo": {
+    "fidelity": "limited",
+    "bundle": "out/controls/CopyField/bundle.js",
+    "styles": ["out/controls/CopyField/css/CopyField.css"],
+    "limitations": [
+      "The copy button cannot reach the clipboard in the demo. The harness iframe is sandboxed to allow-scripts on an opaque origin with no clipboard-write permission, which denies navigator.clipboard and the execCommand fallback alike — so pressing Copy shows the control's failure message rather than putting anything on your clipboard",
+      "That failure state is worth seeing, because it is the same one a real form produces when an administrator's Permissions-Policy withholds the clipboard: the button says so instead of pretending it worked",
+      "Everything else is real — typing, the disabled button on an empty value, the read-only state, and the live-region announcement that a screen reader hears"
+    ],
+    "presets": [
+      {
+        "slug": "default",
+        "name": "Default",
+        "description": "A reference number ready to copy. Press the button to see the confirmation.",
+        "props": {
+          "value": "PCFHUB-2026-0001",
+          "placeholder": ""
+        },
+        "isDefault": true
+      },
+      {
+        "slug": "empty",
+        "name": "Nothing to copy",
+        "description": "An empty column. The button is disabled, because a button that copies an empty string is a button that lies about having done something.",
+        "props": {
+          "value": "",
+          "placeholder": "No reference yet"
+        }
+      },
+      {
+        "slug": "long-value",
+        "name": "A long value",
+        "description": "The field shrinks and the button holds its size, which is the layout a narrow canvas screen actually produces.",
+        "props": {
+          "value": "https://pcfhub.dev/components/pcf-copy-field?utm_source=example&utm_medium=demo",
+          "placeholder": ""
+        }
+      }
+    ]
+  }
+}

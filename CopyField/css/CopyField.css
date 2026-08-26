@@ -1,0 +1,119 @@
+/*
+ * Every rule is scoped under the control's own class.
+ *
+ * A code component shares a document with the host app and with every other
+ * control on the form, so a bare `input { … }` here restyles the page it was
+ * dropped onto. The platform does not sandbox this for you.
+ */
+
+.CopyField {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+/* The field and its button share a line, and the field takes what is left. */
+.CopyField .CopyField-row {
+    display: flex;
+    align-items: stretch;
+    gap: 4px;
+}
+
+.CopyField .CopyField-input {
+    /* `min-width: 0` because a flex item's default `min-width: auto` refuses to
+       shrink below its intrinsic width — which pushes the button off a narrow
+       form instead of narrowing the field, and canvas apps put controls in
+       genuinely narrow places. */
+    flex: 1 1 auto;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 6px 8px;
+    /* Inherit rather than declare: the host controls the form's type scale, and
+       a hard-coded family is what makes a control look pasted in. */
+    font: inherit;
+    color: inherit;
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    border-radius: 2px;
+}
+
+.CopyField .CopyField-button {
+    flex: 0 0 auto;
+    /* 44px is WCAG 2.1 AA's target size (2.5.5 at AAA, 2.5.8's 24px at AA).
+       Meeting the larger one costs nothing here and a form is exactly where a
+       touch user is working one-handed. */
+    min-width: 44px;
+    min-height: 44px;
+    padding: 6px 12px;
+    font: inherit;
+    color: inherit;
+    cursor: pointer;
+    background: transparent;
+    border: 1px solid rgba(0, 0, 0, 0.25);
+    border-radius: 2px;
+}
+
+.CopyField .CopyField-input:focus-visible,
+.CopyField .CopyField-button:focus-visible {
+    outline: 2px solid Highlight;
+    outline-offset: 1px;
+}
+
+.CopyField .CopyField-input:disabled,
+.CopyField .CopyField-button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* `mode.isVisible` is false. Canvas relies on this; model-driven hides the
+   section itself, so this is the cheap half of supporting both. */
+.CopyField--hidden {
+    display: none;
+}
+
+/* The bound property reported `error`. The colour is a system keyword rather
+   than a hex value so it survives a themed environment and high contrast. */
+.CopyField--invalid .CopyField-input {
+    border-color: LinkText;
+}
+
+.CopyField .CopyField-status,
+.CopyField .CopyField-message {
+    margin: 4px 0 0;
+    font-size: 12px;
+    color: inherit;
+}
+
+.CopyField .CopyField-message {
+    color: LinkText;
+}
+
+/* A failed copy is the one confirmation that must not read as success. Colour
+   alone would not carry it (WCAG 1.4.1), which is why the text itself differs
+   and says what to do instead. */
+.CopyField--failed .CopyField-status {
+    color: LinkText;
+}
+
+/*
+ * The live region is never `hidden` and never `display: none` — it is emptied
+ * instead. A region removed from the accessibility tree between announcements
+ * is a region some screen readers stop watching, and the bug it produces is
+ * "the first copy is announced and no later one is".
+ */
+.CopyField .CopyField-status:empty {
+    margin: 0;
+}
+
+/*
+ * Off-screen rather than hidden: `execCommand('copy')` copies the selection,
+ * and a `display: none` element cannot hold one. Only ever in the DOM for the
+ * duration of a synchronous copy.
+ */
+.CopyField .CopyField-scratch {
+    position: absolute;
+    left: -9999px;
+    width: 1px;
+    height: 1px;
+    opacity: 0;
+}
