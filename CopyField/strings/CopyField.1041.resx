@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
-    Display names and descriptions for everything declared in
-    ControlManifest.Input.xml. PCFHub reads the manifest, so these strings are
-    what appear in the component's API reference on the hub as well as in the
-    maker's properties pane.
+    Japanese (ja-JP, LCID 1041). Keep the key set identical to CopyField.1033.resx:
+    a key missing here falls back to the key name in Japanese only, which nobody
+    notices until a customer does.
 
-    Copy this file to add a language — CopyField.3082.resx for Spanish, and so
-    on — then list it under <resources> in the manifest.
+    Note CopyField_CopyLabel: the placeholder leads in English ("Copy {0}") and
+    trails here ("{0} をコピー"), because Japanese puts the verb last. That is the
+    whole reason the string is a template rather than a concatenation.
   -->
   <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
     <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
@@ -69,64 +69,33 @@
   </resheader>
 
   <data name="CopyField_Name" xml:space="preserve">
-    <value>Copy Field</value>
+    <value>コピー フィールド</value>
   </data>
   <data name="CopyField_Desc" xml:space="preserve">
-    <value>A text column with a copy-to-clipboard button and a confirmation.</value>
+    <value>クリップボードへのコピー ボタンと確認メッセージが付いたテキスト列。</value>
   </data>
-
   <data name="value_Name" xml:space="preserve">
-    <value>Value</value>
+    <value>値</value>
   </data>
   <data name="value_Desc" xml:space="preserve">
-    <value>The column this control reads and writes.</value>
+    <value>このコントロールが読み書きする列。</value>
   </data>
-
   <data name="placeholder_Name" xml:space="preserve">
-    <value>Placeholder</value>
+    <value>プレースホルダー</value>
   </data>
   <data name="placeholder_Desc" xml:space="preserve">
-    <value>Hint text shown while the field is empty.</value>
+    <value>フィールドが空のときに表示されるヒント テキスト。</value>
   </data>
-  <!--
-    Runtime strings, read with context.resources.getString(). Anything the user
-    can read belongs here rather than as a literal in index.ts or as an input
-    property a maker hand-translates per instance.
-
-    Add a language by copying this file — CopyField.3082.resx for Spanish,
-    1036 French, 1031 German, 1041 Japanese — with the SAME key set, then
-    listing each one under <resources> in the manifest. A key missing from one
-    language falls back to the key name in that language only, which nobody
-    notices until a customer does.
-  -->
   <data name="CopyField_NoAccess" xml:space="preserve">
-    <value>You do not have access to this value.</value>
+    <value>この値にアクセスする権限がありません。</value>
   </data>
-  <!--
-    The button's whole accessible name, and its tooltip. There is no separate
-    "Copy" string any more: the button is a glyph, so nothing renders a bare
-    verb, and a label that reads "Copy" alone was never the right one anyway.
-
-    {0} is the field's label, taken from `mode.label` at runtime — the name the
-    maker gave the column on this form, not a name shipped here. A form with
-    several of these on it otherwise offers a screen reader several buttons
-    called "Copy", which distinguishes none of them.
-
-    Translators: keep the placeholder, and put it where the sentence needs it
-    rather than where it appears here.
-  -->
   <data name="CopyField_CopyLabel" xml:space="preserve">
-    <value>Copy {0}</value>
+    <value>{0} をコピー</value>
   </data>
   <data name="CopyField_Copied" xml:space="preserve">
-    <value>Copied to the clipboard.</value>
+    <value>クリップボードにコピーしました。</value>
   </data>
-  <!--
-    Said out loud, not just shown, because it is the only signal that the value
-    is NOT on the clipboard. A user who believes they copied something and did
-    not is worse off than one who was never offered the button.
-  -->
   <data name="CopyField_CopyFailed" xml:space="preserve">
-    <value>Could not copy. Select the text and copy it manually.</value>
+    <value>コピーできませんでした。テキストを選択して手動でコピーしてください。</value>
   </data>
 </root>

@@ -45,3 +45,8 @@ The button's accessible name is built from the field's label on *this* form, so
 a form carrying several of these presents "Copy Case number" and "Copy Account
 number" rather than several buttons called "Copy". Rename the field on the form
 and the button's name follows; there is nothing to configure.
+
+The button itself is a glyph rather than the word "Copy" — the same copy mark
+Fluent uses — so that name is also its tooltip, and it is the only place the
+name appears. There is no visible text to translate; ship a `.resx` and both the
+tooltip and the accessible name follow.

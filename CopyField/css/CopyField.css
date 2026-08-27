@@ -6,17 +6,195 @@
  * dropped onto. The platform does not sandbox this for you.
  */
 
+/*
+ * The palette.
+ *
+ * Each value is `var(--fluentToken, literal)`. When the host emits Fluent 9's
+ * design tokens — a model-driven form does, and so does any React control on
+ * the page that mounted a `FluentProvider` above this one — the token wins and
+ * the control themes itself with the app, brand colour included. The literal is
+ * only what a host that publishes nothing gets.
+ *
+ * A standard control cannot mount a `FluentProvider` of its own: the provider
+ * is React, and this is not. So the tokens are read here, never emitted, and
+ * the fallbacks have to stand up alone. They are Fluent's web light theme,
+ * copied out of `@fluentui/tokens` rather than eyeballed.
+ */
 .CopyField {
+    --CopyField-background: var(--colorNeutralBackground3, #f5f5f5);
+    --CopyField-background-hover: var(--colorNeutralBackground3Hover, #ebebeb);
+    --CopyField-background-disabled: var(--colorTransparentBackground, transparent);
+    --CopyField-stroke: var(--colorTransparentStroke, transparent);
+    --CopyField-stroke-disabled: var(--colorNeutralStrokeDisabled, #e0e0e0);
+    --CopyField-stroke-focus: var(--colorCompoundBrandStroke, #0f6cbd);
+    --CopyField-stroke-focus-pressed: var(--colorCompoundBrandStrokePressed, #0f548c);
+    --CopyField-stroke-invalid: var(--colorPaletteRedBorder2, #d13438);
+    --CopyField-foreground: var(--colorNeutralForeground1, #242424);
+    --CopyField-foreground-secondary: var(--colorNeutralForeground2, #424242);
+    --CopyField-foreground-placeholder: var(--colorNeutralForeground4, #707070);
+    --CopyField-foreground-disabled: var(--colorNeutralForegroundDisabled, #bdbdbd);
+    --CopyField-foreground-brand: var(--colorCompoundBrandForeground1, #0f6cbd);
+    --CopyField-foreground-danger: var(--colorPaletteRedForeground1, #bc2f32);
+    --CopyField-foreground-success: var(--colorPaletteGreenForeground1, #0e700e);
+    --CopyField-subtle-hover: var(--colorSubtleBackgroundHover, #f5f5f5);
+    --CopyField-subtle-pressed: var(--colorSubtleBackgroundPressed, #e0e0e0);
+    --CopyField-focus-inner: var(--colorStrokeFocus1, #ffffff);
+    --CopyField-focus-outer: var(--colorStrokeFocus2, #000000);
+    --CopyField-radius: var(--borderRadiusMedium, 4px);
+    --CopyField-font-family: var(
+        --fontFamilyBase,
+        "Segoe UI",
+        "Segoe UI Web (West European)",
+        -apple-system,
+        BlinkMacSystemFont,
+        Roboto,
+        "Helvetica Neue",
+        sans-serif
+    );
+    --CopyField-font-size: var(--fontSizeBase300, 14px);
+    --CopyField-line-height: var(--lineHeightBase300, 20px);
+    --CopyField-font-size-caption: var(--fontSizeBase200, 12px);
+    --CopyField-line-height-caption: var(--lineHeightBase200, 16px);
+    --CopyField-duration-fast: var(--durationUltraFast, 50ms);
+    --CopyField-duration-normal: var(--durationNormal, 200ms);
+    --CopyField-duration-faster: var(--durationFaster, 100ms);
+    --CopyField-curve-accelerate: var(--curveAccelerateMid, cubic-bezier(1, 0, 1, 1));
+    --CopyField-curve-decelerate: var(--curveDecelerateMid, cubic-bezier(0, 0, 0, 1));
+    --CopyField-curve-ease: var(--curveEasyEase, cubic-bezier(0.33, 0, 0.67, 1));
+
     display: block;
     width: 100%;
     box-sizing: border-box;
+    font-family: var(--CopyField-font-family);
+    color: var(--CopyField-foreground);
 }
 
-/* The field and its button share a line, and the field takes what is left. */
-.CopyField .CopyField-row {
+/*
+ * The dark fallbacks, applied from `fluentDesignLanguage.isDarkTheme` rather
+ * than from `prefers-color-scheme`.
+ *
+ * A model-driven app carries its own theme and the operating system's setting
+ * says nothing about it, so the media query answers the wrong question: an
+ * OS-dark machine on a light app would pick these up and paint #141414 behind
+ * the form's white. The class is only ever set when the host has said.
+ *
+ * Only the fallbacks change. A host that emits the tokens is already handing
+ * its own dark values through the `var()`, and these lines never take effect.
+ */
+.CopyField--dark {
+    --CopyField-background: var(--colorNeutralBackground3, #141414);
+    --CopyField-background-hover: var(--colorNeutralBackground3Hover, #292929);
+    --CopyField-stroke-disabled: var(--colorNeutralStrokeDisabled, #424242);
+    --CopyField-stroke-focus: var(--colorCompoundBrandStroke, #479ef5);
+    --CopyField-stroke-focus-pressed: var(--colorCompoundBrandStrokePressed, #2886de);
+    --CopyField-stroke-invalid: var(--colorPaletteRedBorder2, #e37d80);
+    --CopyField-foreground: var(--colorNeutralForeground1, #ffffff);
+    --CopyField-foreground-secondary: var(--colorNeutralForeground2, #d6d6d6);
+    --CopyField-foreground-placeholder: var(--colorNeutralForeground4, #999999);
+    --CopyField-foreground-disabled: var(--colorNeutralForegroundDisabled, #5c5c5c);
+    --CopyField-foreground-brand: var(--colorCompoundBrandForeground1, #479ef5);
+    --CopyField-foreground-danger: var(--colorPaletteRedForeground1, #e37d80);
+    --CopyField-foreground-success: var(--colorPaletteGreenForeground1, #54b054);
+    --CopyField-subtle-hover: var(--colorSubtleBackgroundHover, #383838);
+    --CopyField-subtle-pressed: var(--colorSubtleBackgroundPressed, #2e2e2e);
+    --CopyField-focus-inner: var(--colorStrokeFocus1, #000000);
+    --CopyField-focus-outer: var(--colorStrokeFocus2, #ffffff);
+}
+
+/*
+ * The field surface, which is one control rather than two.
+ *
+ * The input and the button share a single filled box with a single border and a
+ * single focus underline, because that is what the platform's own fields with a
+ * trailing affordance look like — the phone field, the email field, the lookup.
+ * Drawing the input and the button as two boxes side by side is the tell that a
+ * control was not laid out by the same hand as the form around it.
+ *
+ * This is Fluent's `filled-darker` Input, rule for rule: the fill is
+ * `colorNeutralBackground3`, all four borders are `colorTransparentStroke`, and
+ * the box is 32px tall.
+ */
+.CopyField .CopyField-field {
+    position: relative;
     display: flex;
-    align-items: stretch;
-    gap: 4px;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: var(--spacingHorizontalXXS, 2px);
+    box-sizing: border-box;
+    min-height: 32px;
+    border: 1px solid var(--CopyField-stroke);
+    border-radius: var(--CopyField-radius);
+    background-color: var(--CopyField-background);
+    transition: background-color var(--CopyField-duration-faster) var(--CopyField-curve-ease);
+}
+
+.CopyField .CopyField-field:hover {
+    background-color: var(--CopyField-background-hover);
+}
+
+/*
+ * Required, not belt-and-braces. `hidden` works by way of a UA rule
+ * `[hidden] { display: none }`, which any author `display` declaration beats on
+ * specificity — so the `display: flex` above would leave `field.hidden = true`
+ * rendering an empty grey bar where the field-level-security message should be
+ * the only thing on the form.
+ */
+.CopyField .CopyField-field[hidden] {
+    display: none;
+}
+
+/*
+ * The animated focus underline.
+ *
+ * A pseudo-element rather than a `border-bottom`, and scaled rather than grown,
+ * because the obvious version costs a layout: a border that appears on focus is
+ * 2px of height the box did not have a moment ago, so every field below it on
+ * the form nudges down as the user tabs through. `transform` is composited, so
+ * this moves nothing.
+ *
+ * `clip-path` is what keeps a 4px-tall box reading as a 2px line — the height
+ * has to clear the corner radius or the line stops short of the rounded ends,
+ * and the clip trims off the rest. `left`/`right`/`bottom` at -1px put it over
+ * the border rather than inside it.
+ *
+ * The asymmetric timing is Fluent's and it is deliberate: quick and
+ * accelerating on the way out, slower and decelerating on the way in, so
+ * arriving in a field is what the eye catches and leaving one is not.
+ */
+.CopyField .CopyField-field::after {
+    content: "";
+    position: absolute;
+    right: -1px;
+    bottom: -1px;
+    left: -1px;
+    box-sizing: border-box;
+    height: max(2px, var(--CopyField-radius));
+    border-bottom: 2px solid var(--CopyField-stroke-focus);
+    border-bottom-right-radius: var(--CopyField-radius);
+    border-bottom-left-radius: var(--CopyField-radius);
+    clip-path: inset(calc(100% - 2px) 0 0 0);
+    transform: scaleX(0);
+    transition-property: transform;
+    transition-duration: var(--CopyField-duration-fast);
+    transition-delay: var(--CopyField-curve-accelerate);
+}
+
+/* `:focus-within`, so focusing the copy button lights the same field the input
+   would. The button sits inside this box; it should not read as somewhere else. */
+.CopyField .CopyField-field:focus-within::after {
+    transform: scaleX(1);
+    transition-duration: var(--CopyField-duration-normal);
+    transition-delay: var(--CopyField-curve-decelerate);
+}
+
+.CopyField .CopyField-field:focus-within:active::after {
+    border-bottom-color: var(--CopyField-stroke-focus-pressed);
+}
+
+/* The underline is the focus indicator for this box. Suppressing the UA outline
+   here — and only here — stops the host drawing a second one around it. */
+.CopyField .CopyField-field:focus-within {
+    outline: 2px solid transparent;
 }
 
 .CopyField .CopyField-input {
@@ -26,43 +204,140 @@
        genuinely narrow places. */
     flex: 1 1 auto;
     min-width: 0;
+    align-self: stretch;
     box-sizing: border-box;
-    padding: 6px 8px;
-    /* Inherit rather than declare: the host controls the form's type scale, and
-       a hard-coded family is what makes a control look pasted in. */
-    font: inherit;
-    color: inherit;
-    background: transparent;
-    border: 1px solid rgba(0, 0, 0, 0.25);
-    border-radius: 2px;
+    padding: 0 var(--spacingHorizontalM, 12px);
+    border-style: none;
+    outline-style: none;
+    /* The surface owns the fill; the input is a hole in it. Anything else shows
+       as a lighter rectangle inside the field the moment it is hovered. */
+    background-color: transparent;
+    color: var(--CopyField-foreground);
+    font-family: inherit;
+    font-size: var(--CopyField-font-size);
+    line-height: var(--CopyField-line-height);
+    font-weight: var(--fontWeightRegular, 400);
+    text-overflow: ellipsis;
 }
 
+/* `opacity: 1` because Firefox dims placeholders by default, which drags the
+   colour below 4.5:1 against the fill. */
+.CopyField .CopyField-input::placeholder {
+    color: var(--CopyField-foreground-placeholder);
+    opacity: 1;
+}
+
+/* The trailing button, drawn as Fluent's subtle icon button: no fill and no
+   border of its own until it is pointed at, so it reads as part of the field
+   rather than as a second control parked beside it. */
 .CopyField .CopyField-button {
     flex: 0 0 auto;
-    /* 44px is WCAG 2.1 AA's target size (2.5.5 at AAA, 2.5.8's 24px at AA).
-       Meeting the larger one costs nothing here and a form is exactly where a
-       touch user is working one-handed. */
-    min-width: 44px;
-    min-height: 44px;
-    padding: 6px 12px;
-    font: inherit;
-    color: inherit;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    /* 28px inside a 32px field, which clears WCAG 2.1 AA's 24px target (2.5.8).
+       Not 2.5.5's 44px at AAA: a 44px control cannot sit inside a 32px field,
+       and a field that is not 32px tall is not the platform's field. Matching
+       the host is the trade being made here, and it is the AA line that is
+       normative. */
+    width: 28px;
+    height: 28px;
+    margin-right: 2px;
+    padding: 0;
+    border: none;
+    border-radius: var(--CopyField-radius);
+    background-color: transparent;
+    color: var(--CopyField-foreground-secondary);
     cursor: pointer;
-    background: transparent;
-    border: 1px solid rgba(0, 0, 0, 0.25);
-    border-radius: 2px;
+    outline-style: none;
+    transition:
+        background-color var(--CopyField-duration-faster) var(--CopyField-curve-ease),
+        color var(--CopyField-duration-faster) var(--CopyField-curve-ease);
 }
 
-.CopyField .CopyField-input:focus-visible,
+.CopyField .CopyField-button:hover {
+    background-color: var(--CopyField-subtle-hover);
+    color: var(--CopyField-foreground-brand);
+}
+
+.CopyField .CopyField-button:active {
+    background-color: var(--CopyField-subtle-pressed);
+}
+
+/*
+ * Fluent's focus indicator: a dark ring with a light one immediately inside it,
+ * so the shape survives against a light fill and a dark one. `:focus-visible`
+ * rather than `:focus`, so a mouse click does not leave a ring behind.
+ *
+ * The button needs its own on top of the field's underline — the underline says
+ * focus is somewhere in this field, and a field holding two tab stops has to say
+ * which one.
+ */
 .CopyField .CopyField-button:focus-visible {
-    outline: 2px solid Highlight;
-    outline-offset: 1px;
+    outline: 2px solid var(--CopyField-focus-outer);
+    outline-offset: -2px;
+    box-shadow: inset 0 0 0 4px var(--CopyField-focus-inner);
 }
 
-.CopyField .CopyField-input:disabled,
-.CopyField .CopyField-button:disabled {
-    opacity: 0.6;
+/* `currentColor`, so the glyph follows the button's hover, success and disabled
+   colours without a second set of rules chasing them. */
+.CopyField .CopyField-icon {
+    display: block;
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
+}
+
+/* Only one of the two glyphs is ever in the box. Copy is the resting state; the
+   checkmark replaces it for as long as the confirmation stands, which is the
+   same three seconds the status text is up. */
+.CopyField .CopyField-icon--copied,
+.CopyField--copied .CopyField-icon--copy {
+    display: none;
+}
+
+.CopyField--copied .CopyField-icon--copied {
+    display: block;
+}
+
+.CopyField--copied .CopyField-button {
+    color: var(--CopyField-foreground-success);
+}
+
+/*
+ * Disabled, which here means the *value* is not editable — not that the control
+ * is off. Fluent's disabled Input: the fill goes, the border becomes visible and
+ * grey, and the focus underline is removed outright.
+ *
+ * The button is deliberately not covered by this. A read-only field is where
+ * copying is most useful — a system-generated reference number nobody may edit
+ * is the canonical case — so the button follows the value's readability, not its
+ * editability, and keeps its own colours.
+ */
+.CopyField--disabled .CopyField-field,
+.CopyField--disabled .CopyField-field:hover {
+    background-color: var(--CopyField-background-disabled);
+    border-color: var(--CopyField-stroke-disabled);
+}
+
+.CopyField--disabled .CopyField-input {
+    color: var(--CopyField-foreground-disabled);
     cursor: not-allowed;
+}
+
+.CopyField--disabled .CopyField-input::placeholder {
+    color: var(--CopyField-foreground-disabled);
+}
+
+.CopyField .CopyField-button:disabled {
+    color: var(--CopyField-foreground-disabled);
+    cursor: not-allowed;
+}
+
+.CopyField .CopyField-button:disabled:hover {
+    background-color: transparent;
+    color: var(--CopyField-foreground-disabled);
 }
 
 /* `mode.isVisible` is false. Canvas relies on this; model-driven hides the
@@ -71,28 +346,34 @@
     display: none;
 }
 
-/* The bound property reported `error`. The colour is a system keyword rather
-   than a hex value so it survives a themed environment and high contrast. */
-.CopyField--invalid .CopyField-input {
-    border-color: LinkText;
+/* The bound property reported `error`. Fluent puts the invalid colour on all
+   four borders and drops it the moment the field is focused, on the reasoning
+   that somebody who is already fixing the error does not need telling again —
+   `:not(:focus-within)` is what implements that. */
+.CopyField--invalid .CopyField-field:not(:focus-within),
+.CopyField--invalid .CopyField-field:hover:not(:focus-within) {
+    border-color: var(--CopyField-stroke-invalid);
 }
 
 .CopyField .CopyField-status,
 .CopyField .CopyField-message {
-    margin: 4px 0 0;
-    font-size: 12px;
-    color: inherit;
+    margin: var(--spacingVerticalXXS, 2px) 0 0;
+    font-family: inherit;
+    font-size: var(--CopyField-font-size-caption);
+    line-height: var(--CopyField-line-height-caption);
+    color: var(--CopyField-foreground-secondary);
 }
 
 .CopyField .CopyField-message {
-    color: LinkText;
+    color: var(--CopyField-foreground-danger);
 }
 
 /* A failed copy is the one confirmation that must not read as success. Colour
    alone would not carry it (WCAG 1.4.1), which is why the text itself differs
-   and says what to do instead. */
+   and says what to do instead — and why the glyph stays the copy mark rather
+   than turning into the checkmark. */
 .CopyField--failed .CopyField-status {
-    color: LinkText;
+    color: var(--CopyField-foreground-danger);
 }
 
 /*
@@ -116,4 +397,44 @@
     width: 1px;
     height: 1px;
     opacity: 0;
+}
+
+/*
+ * Forced colours collapse every tint to one of a handful of system keywords, so
+ * anything carrying meaning by colour has to carry it by shape too. The borders
+ * come back to being visible, and the underline picks up the system highlight
+ * instead of the brand.
+ */
+@media (forced-colors: active) {
+    .CopyField .CopyField-field {
+        border-color: ButtonBorder;
+    }
+
+    .CopyField .CopyField-field::after {
+        border-bottom-color: Highlight;
+    }
+
+    .CopyField--disabled .CopyField-field {
+        border-color: GrayText;
+    }
+
+    .CopyField .CopyField-button:disabled,
+    .CopyField--disabled .CopyField-input {
+        color: GrayText;
+    }
+}
+
+/*
+ * The animation is decoration; the focus it indicates is not. Reduced motion
+ * shortens it to nothing rather than removing the rule, so the line still
+ * appears — it just stops travelling to get there.
+ */
+@media screen and (prefers-reduced-motion: reduce) {
+    .CopyField .CopyField-field,
+    .CopyField .CopyField-field::after,
+    .CopyField .CopyField-field:focus-within::after,
+    .CopyField .CopyField-button {
+        transition-duration: 0.01ms;
+        transition-delay: 0.01ms;
+    }
 }

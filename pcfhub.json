@@ -27,7 +27,10 @@
   },
   "media": {
     "logo": "media/logo.png",
-    "screenshots": []
+    "screenshots": [
+      "media/at-rest.png",
+      "media/copied.png"
+    ]
   },
   "demo": {
     "fidelity": "full",
