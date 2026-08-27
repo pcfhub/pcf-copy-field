@@ -35,9 +35,14 @@ variant would be useful.
 
 ## Does it work on a phone?
 
-Yes, on both model-driven mobile and canvas phone layouts. The button is 44px
-square, which is the touch target size WCAG asks for, and the field shrinks
+Yes, on both model-driven mobile and canvas phone layouts. The field shrinks
 rather than pushing the button off the screen.
+
+The button is 28px square, which clears WCAG 2.1 AA's 24px target size (2.5.8)
+but not the 44px asked for at AAA (2.5.5). That is a deliberate trade: the button
+sits *inside* a 32px-tall field because that is where the platform puts a field's
+trailing affordance, and a 44px control cannot. A control that met 2.5.5 here
+would be a control that no longer looks like the form it is on.
 
 ## Does it send the value anywhere?
 

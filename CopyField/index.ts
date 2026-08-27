@@ -1,5 +1,31 @@
 import { IInputs, IOutputs } from './generated/ManifestTypes';
 
+const SVG_NS = 'http://www.w3.org/2000/svg';
+
+/**
+ * Fluent's own `Copy16Regular` and `Checkmark16Regular`, as path data.
+ *
+ * Copied out of `@fluentui/react-icons` rather than drawn, so the glyph on this
+ * button is the same shape the platform draws on its own — a hand-made copy
+ * mark next to a form full of Fluent icons is visible as wrong long before
+ * anybody can say which line of it is off. The 16px cuts, not the 20px ones
+ * scaled down: Fluent redraws each size rather than scaling, and a 20px glyph in
+ * a 16px box has strokes that are a fifth too thin.
+ *
+ * They are inlined as data instead of imported because `@fluentui/react-icons`
+ * is a React package and this is a standard control, and installing it to reach
+ * two paths would put the whole icon set's module graph in the bundle.
+ */
+const ICON_PATHS = {
+    copy:
+        'M5 6H4a1 1 0 0 0-1 1v5a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1h1a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7c0' +
+        '-1.1.9-2 2-2h1zm7-4a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2V4c0-1.1.9-2 2-2zM8 3a1 ' +
+        '1 0 0 0-1 1v5a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1z',
+    copied:
+        'M13.86 3.66a.5.5 0 0 1-.02.7l-7.93 7.48a.6.6 0 0 1-.84-.02L2.4 9.1a.5.5 0 0 1 .72-.7l2.4 ' +
+        '2.44 7.65-7.2a.5.5 0 0 1 .7.02',
+} as const;
+
 /**
  * A bound text column, plus a button that puts its value on the clipboard.
  *
@@ -15,6 +41,8 @@ import { IInputs, IOutputs } from './generated/ManifestTypes';
  */
 export class CopyField implements ComponentFramework.StandardControl<IInputs, IOutputs> {
     private container!: HTMLDivElement;
+    /** The filled box the input and the button share. See the stylesheet. */
+    private field!: HTMLDivElement;
     private input!: HTMLInputElement;
     private button!: HTMLButtonElement;
     private status!: HTMLParagraphElement;
@@ -55,6 +83,23 @@ export class CopyField implements ComponentFramework.StandardControl<IInputs, IO
         this.button.addEventListener('click', this.onCopy);
 
         /*
+         * Both glyphs are built once and CSS shows one of them, rather than the
+         * path data being swapped on each copy. `updateView` runs on every
+         * change to every bound value on the form, so anything rebuilt in it is
+         * rebuilt constantly — and this button's contents in particular must
+         * survive a render, since the confirmation is on a timer that
+         * `updateView` knows nothing about.
+         *
+         * `aria-hidden` on both: the button's accessible name comes from its
+         * `aria-label`, and an unlabelled `<svg>` inside a labelled button is at
+         * best noise and at worst a second name.
+         */
+        this.button.append(
+            CopyField.createIcon('copy', 'CopyField-icon CopyField-icon--copy'),
+            CopyField.createIcon('copied', 'CopyField-icon CopyField-icon--copied'),
+        );
+
+        /*
          * The confirmation is a live region, and it is separate from the
          * validation message on purpose.
          *
@@ -78,12 +123,21 @@ export class CopyField implements ComponentFramework.StandardControl<IInputs, IO
         this.message = document.createElement('p');
         this.message.className = 'CopyField-message';
 
-        const row = document.createElement('div');
-        row.className = 'CopyField-row';
-        row.append(this.input, this.button);
+        /*
+         * One box holding both, not two boxes beside each other.
+         *
+         * The platform's own fields with a trailing affordance — phone, email,
+         * lookup — are a single filled surface with the button inside it, and
+         * the border, the hover and the focus underline belong to that surface
+         * rather than to either child. Rendering an input next to a separate
+         * button is what makes a code component look pasted onto the form.
+         */
+        this.field = document.createElement('div');
+        this.field.className = 'CopyField-field';
+        this.field.append(this.input, this.button);
 
         this.container.classList.add('CopyField');
-        this.container.append(row, this.status, this.message);
+        this.container.append(this.field, this.status, this.message);
 
         this.render(context);
     }
@@ -112,6 +166,9 @@ export class CopyField implements ComponentFramework.StandardControl<IInputs, IO
     private render(context: ComponentFramework.Context<IInputs>): void {
         const parameter = context.parameters.value;
 
+        // Before the visibility guard, so the no-access message is themed too.
+        this.applyTheme(context);
+
         // Canvas relies on this; a model-driven form hides the section itself.
         // Honouring it costs one class and covers both hosts.
         this.container.classList.toggle('CopyField--hidden', !context.mode.isVisible);
@@ -132,16 +189,17 @@ export class CopyField implements ComponentFramework.StandardControl<IInputs, IO
         const security = parameter.security;
 
         if (security !== undefined && !security.readable) {
-            this.input.hidden = true;
-            this.button.hidden = true;
+            // The whole surface goes, not the two children inside it. Hiding
+            // only the input and the button would leave the field's own filled
+            // box on the form as an empty grey bar with a message under it.
+            this.field.hidden = true;
             this.message.hidden = false;
             this.message.textContent = this.resources.getString('CopyField_NoAccess');
 
             return;
         }
 
-        this.input.hidden = false;
-        this.button.hidden = false;
+        this.field.hidden = false;
 
         const incoming = parameter.raw ?? '';
 
@@ -163,6 +221,11 @@ export class CopyField implements ComponentFramework.StandardControl<IInputs, IO
         // button follows the value's readability, not its editability.
         this.input.disabled =
             context.mode.isControlDisabled || (security !== undefined && !security.editable);
+
+        // The class is what the fill, the border and the underline key off:
+        // Fluent's disabled field is a different surface, not a dimmer one, and
+        // `:disabled` on the input alone cannot reach the box around it.
+        this.container.classList.toggle('CopyField--disabled', this.input.disabled);
 
         // Nothing to copy is a real state, and a button that copies an empty
         // string is a button that lies about having done something.
@@ -188,11 +251,18 @@ export class CopyField implements ComponentFramework.StandardControl<IInputs, IO
         // with four of these on it otherwise presents four buttons called
         // "Copy" in a screen reader's element list, which is four ways to
         // describe nothing.
-        this.button.setAttribute(
-            'aria-label',
-            this.resources.getString('CopyField_CopyLabel').replace('{0}', label),
-        );
-        this.button.textContent = this.resources.getString('CopyField_Copy');
+        const buttonLabel = this.resources.getString('CopyField_CopyLabel').replace('{0}', label);
+
+        this.button.setAttribute('aria-label', buttonLabel);
+
+        // The same string as a tooltip, because the button is now a glyph. A
+        // sighted user who does not recognise the copy mark has no other way to
+        // find out what it does, and `title` is the affordance the platform's
+        // own icon-only field buttons use.
+        //
+        // Not a replacement for the `aria-label` — a screen reader may be
+        // configured to ignore `title`, and a touch user has no hover.
+        this.button.title = buttonLabel;
 
         this.container.dir = context.userSettings.isRTL ? 'rtl' : 'ltr';
         this.container.classList.toggle('CopyField--invalid', parameter.error);
@@ -200,6 +270,61 @@ export class CopyField implements ComponentFramework.StandardControl<IInputs, IO
 
         this.message.hidden = !parameter.error;
         this.message.textContent = parameter.error ? parameter.errorMessage : '';
+    }
+
+    /**
+     * The stylesheet reads Fluent's design tokens with a literal fallback, and
+     * this decides which set of fallbacks is in play.
+     *
+     * Only the fallbacks — a host that emits the tokens is already handing over
+     * its own dark values through the `var()`, and the class changes nothing
+     * there. It matters for the hosts that emit nothing, which includes PCFHub's
+     * demo harness and any canvas app.
+     *
+     * `@media (prefers-color-scheme: dark)` is the obvious hook and it is the
+     * wrong question: a model-driven app carries its own theme and the operating
+     * system's setting says nothing about it, so an OS-dark machine on a light
+     * app would paint #141414 behind the form's white. Absent means absent —
+     * writing no class leaves the light fallbacks, which is the same guess the
+     * host itself makes when it does not say.
+     */
+    private applyTheme(context: ComponentFramework.Context<IInputs>): void {
+        const isDarkTheme = context.fluentDesignLanguage?.isDarkTheme;
+
+        if (isDarkTheme === undefined) {
+            return;
+        }
+
+        this.container.classList.toggle('CopyField--dark', isDarkTheme);
+    }
+
+    /**
+     * `createElementNS`, not `innerHTML`.
+     *
+     * `document.createElement('svg')` produces an HTMLUnknownElement that
+     * renders nothing at all and reports no error, because SVG lives in its own
+     * namespace and the HTML factory does not know it. The string form would
+     * work, but a control that assigns `innerHTML` anywhere has to be read
+     * carefully forever after by anyone auditing it for injection — and there is
+     * no reason to spend that here for two static paths.
+     */
+    private static createIcon(name: keyof typeof ICON_PATHS, className: string): SVGSVGElement {
+        const svg = document.createElementNS(SVG_NS, 'svg');
+
+        svg.setAttribute('class', className);
+        svg.setAttribute('viewBox', '0 0 16 16');
+        svg.setAttribute('aria-hidden', 'true');
+        // Without this, IE-era browsers and some assistive tooling put a
+        // focusable `<svg>` in the tab order — inside a button that is already a
+        // tab stop, which produces a stop that does nothing.
+        svg.setAttribute('focusable', 'false');
+
+        const path = document.createElementNS(SVG_NS, 'path');
+
+        path.setAttribute('d', ICON_PATHS[name]);
+        svg.append(path);
+
+        return svg;
     }
 
     private onInput = (): void => {
@@ -302,11 +427,26 @@ export class CopyField implements ComponentFramework.StandardControl<IInputs, IO
         this.status.textContent = '';
         this.status.textContent = this.resources.getString(key);
 
-        this.container.classList.toggle('CopyField--failed', key === 'CopyField_CopyFailed');
+        const failed = key === 'CopyField_CopyFailed';
+
+        this.container.classList.toggle('CopyField--failed', failed);
+
+        /*
+         * The glyph turns into a checkmark for as long as the confirmation
+         * stands — the same feedback the platform's own copy affordances give,
+         * and the only feedback a user gets who is looking at the button rather
+         * than at the line of text below it.
+         *
+         * Success only. A failed copy keeps the copy mark, because there is no
+         * icon that reads as "did not happen" and the wrong one read at a glance
+         * is worse than none: the whole point of the failure path is that the
+         * user must not walk away believing they have the value.
+         */
+        this.container.classList.toggle('CopyField--copied', !failed);
 
         this.confirmationTimer = window.setTimeout(() => {
             this.status.textContent = '';
-            this.container.classList.remove('CopyField--failed');
+            this.container.classList.remove('CopyField--failed', 'CopyField--copied');
             this.confirmationTimer = undefined;
         }, 3000);
     }

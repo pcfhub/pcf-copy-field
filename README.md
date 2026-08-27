@@ -9,6 +9,13 @@ Documentation lives on [PCFHub](https://pcfhub.dev/components/pcf-copy-field), b
 from the `docs/` directory in this repository. Edit the Markdown here; the hub
 recompiles it.
 
+<!-- Plain Markdown, not the hub's ::image directive: GitHub renders this file
+     and does not understand the directives, which the hub compiles only for
+     pages under docs/. -->
+![A form field labelled Account Number holding ABCO9M32, with a copy icon at the right-hand end of the field.](media/at-rest.png)
+
+![The same field after copying: a green checkmark in place of the copy icon, the blue focus underline along the bottom of the field, and the text Copied to the clipboard beneath it.](media/copied.png)
+
 
 ## What it does
 

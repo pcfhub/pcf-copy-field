@@ -7,7 +7,7 @@
   -->
   <control namespace="PCFHub"
            constructor="CopyField"
-           version="0.1.2"
+           version="0.2.0"
            display-name-key="CopyField_Name"
            description-key="CopyField_Desc"
            control-type="standard">
@@ -49,6 +49,32 @@
     <resources>
       <code path="index.ts" order="1" />
       <css path="css/CopyField.css" order="1" />
+      <!--
+        Every language the control ships.
+
+        A .resx that exists on disk but is not listed here is not shipped, and
+        nothing warns — the file is simply never packed, and the control runs in
+        English for that locale while the repository looks translated.
+        `npm run check` catches that, and a key missing from a language.
+
+        THE ORDER IS DELIBERATE AND 1033 GOES LAST. `pcf-start` picks the .resx
+        by manifest order rather than by locale: it reads whichever file is
+        listed *last* and ignores the LCID and the browser language entirely.
+        The platform itself ignores the order completely — a real app resolves
+        from the user's provisioned language — so `npm start` is the only thing
+        in the world that reads this order, and it is ordered for it. Listing
+        1033 first is the tidier-looking arrangement and it makes `npm start`
+        render the whole control in Japanese, which reads as a broken build.
+
+        The consequence to remember: ADD A NEW LANGUAGE ABOVE THIS LINE, not
+        below it. Appending a sixth file after 1033 silently moves the harness
+        to that language, and the symptom shows up in a `npm start` session
+        nobody connects to a manifest edit.
+      -->
+      <resx path="strings/CopyField.3082.resx" version="1.0.0" />
+      <resx path="strings/CopyField.1036.resx" version="1.0.0" />
+      <resx path="strings/CopyField.1031.resx" version="1.0.0" />
+      <resx path="strings/CopyField.1041.resx" version="1.0.0" />
       <resx path="strings/CopyField.1033.resx" version="1.0.0" />
     </resources>
 

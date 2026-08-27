@@ -8,6 +8,13 @@ order: 1
 
 A text column with a copy-to-clipboard button and a confirmation.
 
+::image{src=media/at-rest.png alt="A form field labelled Account Number holding ABCO9M32, with a copy icon at the right-hand end of the field."}
+
+Pressing the button swaps the icon for a checkmark and writes the confirmation
+below the field, where it is also announced to a screen reader:
+
+::image{src=media/copied.png alt="The same field after copying: a green checkmark in place of the copy icon, the blue focus underline along the bottom of the field, and the text Copied to the clipboard beneath it."}
+
 ## Why this one
 
 The value people most often need to copy out of a form is the one they are not
@@ -30,6 +37,11 @@ whether it worked:
 - **The button follows readability, not editability.** A read-only field keeps
   its copy button, because that is the case the control exists for. A field the
   user is not permitted to *read* loses both the button and the value.
+- **It looks like the field beside it.** The input and the button are one filled
+  surface with one border and one animated focus underline — the same shape the
+  platform draws for its own phone, email and lookup fields. The colours are
+  read from Fluent's design tokens where the host publishes them, so the control
+  follows the app's theme and brand rather than carrying its own.
 
 ## What it works with
 

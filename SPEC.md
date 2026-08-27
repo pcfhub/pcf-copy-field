@@ -41,6 +41,83 @@ is that an unchecked `security` renders "no value" where the truth is "not
 allowed to see it". Here the copy button has to go with it, or the control
 offers to put a value on the clipboard that the user may not read.
 
+## Looking like the form it is on
+
+The first release did not, and the reason is worth writing down because it is
+structural rather than a matter of taste.
+
+A standard control cannot mount a `FluentProvider`: the provider is React, and
+this is not. The first pass read that as "Fluent's styling is unavailable to a
+standard control" and fell back to `font: inherit`, `background: transparent`
+and a 1px `rgba(0, 0, 0, 0.25)` border — which inherits the host's *type* and
+nothing else. Next to a real form field that is a white bordered box beside a
+grey filled one, and the control reads as pasted on.
+
+The half that was missed: `FluentProvider` is what **emits** the design tokens
+as CSS custom properties, and a model-driven form already has one above every
+code component on the page. Nothing has to be mounted to *read* them. So the
+stylesheet is `var(--colorNeutralBackground3, #f5f5f5)` throughout — the token
+where the host publishes it, and Fluent's own light-theme literal where it does
+not. The control follows the app's theme and brand colour for free in the first
+case, and looks right anyway in the second.
+
+**The shape had to change too, not just the colours.** The input and the button
+were two boxes side by side; the platform's own fields with a trailing
+affordance — phone, email, lookup — are one filled surface with the button
+inside it, and the border, the hover and the focus state belong to that surface.
+So `.CopyField-row` became `.CopyField-field`, and it carries all of them.
+
+**The focus underline is a scaled pseudo-element, not a border.** A
+`border-bottom` that appears on focus is 2px of height the box did not have a
+moment ago, so every field below it on the form nudges down as the user tabs
+through. Fluent scales an absolutely-positioned `::after` from `scaleX(0)`
+instead, with a `clip-path` trimming a 4px box down to a 2px line — the height
+has to clear the corner radius or the line stops short of the rounded ends. The
+timing is asymmetric on purpose: fast and accelerating out, slower and
+decelerating in, so arriving in a field is what the eye catches.
+
+Every value here was read out of `@fluentui/react-input`'s compiled styles and
+`@fluentui/tokens` rather than sampled from a screenshot.
+
+**The new wrapper needed `[hidden] { display: none }`, and that is not
+defensive.** `element.hidden` works by way of a UA rule `[hidden] { display:
+none }`, which any author `display` declaration outranks — so giving the field
+`display: flex` silently broke `field.hidden = true`. The branch it broke is the
+field-level-security one: the only branch nobody exercises, and the one where
+failing open renders an empty grey box where "you may not see this value" should
+be the only thing on the form.
+
+**The dark fallbacks key off `fluentDesignLanguage.isDarkTheme`, not
+`prefers-color-scheme`.** A model-driven app carries its own theme and the OS
+setting says nothing about it, so the media query would paint `#141414` behind a
+light app's white on any OS-dark machine. Absent means absent: no class, light
+fallbacks, which is the same guess the host makes when it does not say.
+
+**The button is a glyph now**, Fluent's `Copy16Regular` path data inlined rather
+than the word "Copy" — the 16px cut, not the 20px one scaled down, because
+Fluent redraws each size and a scaled 20px glyph has strokes a fifth too thin.
+It swaps to `Checkmark16Regular` for the three seconds the confirmation stands.
+That removed the `CopyField_Copy` resource string, since nothing renders a bare
+verb any more, and it makes `CopyField_CopyLabel` the button's tooltip as well
+as its accessible name — a glyph has no other way to say what it does.
+
+The failure path deliberately does **not** get an icon. There is no glyph that
+reads as "did not happen", and the wrong one read at a glance is worse than
+none, given that the whole point of that path is that the user must not walk
+away believing they have the value.
+
+**The 44px touch target went.** It was 2.5.5 at AAA and it is now 28px, which
+clears 2.5.8's 24px at AA. A 44px control cannot sit inside a 32px field, and a
+field that is not 32px tall is not the platform's field.
+
+Verified by serving the built stylesheet against the DOM the control constructs
+and reading computed styles: 32px field, `#f5f5f5` fill, transparent borders,
+4px radius, a 2px `#0f6cbd` underline that animates on `:focus-within`, a 28px
+button holding a 16px glyph that turns `#0e700e` in the copied state, and the
+dark class flipping the fill to `#141414` and the brand to `#479ef5`. Also
+checked that setting `--colorNeutralBackground3` on the document overrides both
+palettes, which is the whole premise of the token-with-fallback approach.
+
 ## Demo
 
 `fidelity: "full"`. It shipped as `"limited"` for one release on a piece of
@@ -75,10 +152,71 @@ was wrong within one release.
   was tested in. `navigator.clipboard` may well succeed in some hosts where the
   fallback is what carries others; the control reports success either way and
   does not record which path it took.
-- **Behaviour on a real model-driven form.** Everything here was built and
+- **Behaviour on a real model-driven form.** ~~Everything here was built and
   checked against the type definitions and the build, not against a Dataverse
-  environment. Specifically unverified: whether a given tenant's
-  Permissions-Policy grants the clipboard, and how the truncation on a multiline
-  column actually looks.
+  environment.~~ **Settled for the cases the screenshots cover.**
+  `media/at-rest.png` and `media/copied.png` are a Dataverse model-driven form,
+  confirmed by the person who took them. They establish:
+
+  - it renders at field height, with the filled surface, the trailing glyph and
+    the label alignment of the platform's own fields beside it — which is the
+    whole point of the styling rewrite, and the only evidence for it that a
+    computed-style read cannot give;
+  - the focus underline draws (visible along the bottom of the second shot);
+  - **a copy actually succeeded inside a model-driven iframe** — the checkmark
+    and "Copied to the clipboard." are written only by
+    `confirm('CopyField_Copied')`, reached only after one of the two clipboard
+    paths returns true. So the Permissions-Policy question is answered *for this
+    tenant*: something works. Which of the two paths did the work is the open
+    item above.
+
+  **The pixels were measured rather than eyeballed**, by drawing both PNGs to a
+  canvas and reading the histogram back. Every colour is an exact match to the
+  value in `@fluentui/tokens` — no drift, no near-miss:
+
+  | Measured | Hex | Token |
+  | --- | --- | --- |
+  | Field fill (7,162 px) | `#f5f5f5` | `colorNeutralBackground3` |
+  | Focus underline (496 px) | `#0f6cbd` | `colorCompoundBrandStroke` |
+  | Checkmark | `#0e700e` | `colorPaletteGreenForeground1` |
+  | Value text | `#242424` | `colorNeutralForeground1` |
+  | Confirmation text (65 px) | `#424242` | `colorNeutralForeground2` |
+
+  That is the styling rewrite verified end to end in the host it was written
+  for, which is as far as a screenshot can carry it.
+
+  Still open, and this is the part the measurement specifically *cannot* settle:
+  **whether those colours came from the host's tokens or from the literal
+  fallbacks.** They are the same values by construction — the fallbacks were
+  copied out of Fluent's light theme precisely so that both paths land here — so
+  an exact match is consistent with either. The underline being `#0f6cbd` does
+  rule out one combination: this is not a custom-branded environment reading
+  live tokens, because a branded org would have tinted that line. It cannot
+  separate "unbranded org, tokens resolving" from "tokens absent, fallbacks
+  doing the work".
+
+  Two shots would separate them, and neither is worth a special trip:
+
+  - the same field in a **dark** model-driven app — if the fill goes `#141414`
+    the theming path works, whichever half of it did the work;
+  - the same field in a **brand-customised** environment — if the underline
+    takes the org's brand colour, the tokens are genuinely resolving.
+
+  Also still unverified: how the truncation on a multiline column looks.
 - **The logo.** `media/logo.png` is still the template's placeholder, and
-  nothing in CI checks what it looks like.
+  nothing in CI checks what it looks like. The two screenshots beside it are
+  real; the logo is not.
+- **That a model-driven form actually publishes the Fluent tokens this control
+  reads.** The mechanism is right — `FluentProvider` emits them as custom
+  properties and UCI mounts one — and the control now demonstrably renders
+  correctly on a real form. But that is not the same claim: as the pixel
+  measurement above works through, the token path and the fallback path produce
+  identical output in an unbranded light theme, so a correct screenshot is
+  evidence for the *outcome* and not for the *mechanism*.
+
+  Worth keeping in that order, because it is the reassuring version that is
+  wrong: "it looks right on a form, so the tokens must be resolving" does not
+  follow, and the difference matters the first time somebody puts this control
+  in a dark or branded app. One line in DevTools on a real form settles it —
+  `getComputedStyle(document.documentElement).getPropertyValue('--colorNeutralBackground3')`
+  is either a colour or empty.
