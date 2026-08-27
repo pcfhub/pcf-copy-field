@@ -7,7 +7,7 @@
   -->
   <control namespace="PCFHub"
            constructor="CopyField"
-           version="0.1.0"
+           version="0.1.1"
            display-name-key="CopyField_Name"
            description-key="CopyField_Desc"
            control-type="standard">
