@@ -43,28 +43,38 @@ offers to put a value on the clipboard that the user may not read.
 
 ## Demo
 
-`fidelity: "limited"`, and the limitation is the interesting part. PCFHub's
-harness sandboxes controls to `sandbox="allow-scripts"` on an opaque origin with
-no `allow="clipboard-write"` (`resources/js/features/demo/demo-frame.tsx` in the
-hub, PLAN §13.3) — which denies `navigator.clipboard` and, with
-`allow-same-origin` withheld, the `execCommand` fallback too. So the demo shows
-the copy *failure* state every time and the success state never.
+`fidelity: "full"`. It shipped as `"limited"` for one release on a piece of
+reasoning that turned out to be wrong, and the way it was caught is the useful
+part of this section.
 
-Confirmed by reading the hub's iframe attributes, not by running the harness
-against this bundle — see below.
+The reasoning: PCFHub's harness sandboxes controls to `sandbox="allow-scripts"`
+on an opaque origin with no `allow="clipboard-write"`
+(`resources/js/features/demo/demo-frame.tsx` in the hub, PLAN §13.3). That is
+accurate, and it does deny `navigator.clipboard`. The error was carrying the
+conclusion across to the fallback: `document.execCommand('copy')` predates
+Permissions-Policy and is not gated by it, so it succeeds in exactly the frame
+the modern API is refused in. The control copies in the demo, verified by
+pressing the button and pasting the result outside the browser.
 
-That is not a demo worth apologising for: the failure state is a real state a
-real form produces, and it is the one this control exists to handle well. But
-`full` would have been a false claim, and `mocked` would imply the harness fakes
-a clipboard, which it does not.
+So the fallback that exists for hostile hosts is what makes the demo work, and
+the manifest claimed the opposite. Two lessons, and the second is the one worth
+carrying: a two-path design has to be reasoned about per path, not per API; and
+a fidelity claim is a claim about *behaviour*, which means pressing the button
+is the only thing that establishes it. `limited` was argued from markup and it
+was wrong within one release.
 
 ## Not verified
 
-- **That the clipboard actually fails in the harness.** Argued from the iframe's
-  sandbox attributes rather than measured. Booting this bundle in the local
-  harness and pressing the button would settle it, and would also be the first
-  test PCFHub has that drives a real control inside the demo iframe — the row
-  §Verification Plan assigns the harness and which P4 and P5 both left open.
+- ~~That the clipboard fails in the harness.~~ **Settled, and settled against
+  the guess** — see Demo above. It stayed wrong exactly as long as nobody
+  pressed the button, which is the argument for the harness test §Verification
+  Plan assigns and P4 and P5 both left open: a test that drives a real control
+  inside the demo iframe would have caught this before the release rather than
+  after it.
+- **Which of the two paths runs, per browser.** Verified only in the browser it
+  was tested in. `navigator.clipboard` may well succeed in some hosts where the
+  fallback is what carries others; the control reports success either way and
+  does not record which path it took.
 - **Behaviour on a real model-driven form.** Everything here was built and
   checked against the type definitions and the build, not against a Dataverse
   environment. Specifically unverified: whether a given tenant's

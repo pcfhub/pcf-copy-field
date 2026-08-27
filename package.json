@@ -1,6 +1,6 @@
 {
   "name": "pcf-copy-field",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "description": "A text column with a copy-to-clipboard button and a confirmation.",
   "license": "MIT",
   "private": true,

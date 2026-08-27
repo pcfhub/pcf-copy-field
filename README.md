@@ -38,10 +38,12 @@ current form, so it is not a property. Full reference: [docs/api.md](docs/api.md
 [pcfhub.dev/components/pcf-copy-field](https://pcfhub.dev/components/pcf-copy-field)
 — documentation, both solution downloads, and a live demo.
 
-The demo's copy button always fails, on purpose. PCFHub sandboxes third-party
-controls to `allow-scripts` on an opaque origin, which denies the clipboard; the
-demo therefore shows the failure state faithfully and the success state not at
-all. `demo.fidelity` is set to `limited` and says so.
+The demo copies for real — `demo.fidelity` is `full`. PCFHub sandboxes
+third-party controls to `allow-scripts` on an opaque origin, which denies
+`navigator.clipboard`, and the `execCommand` fallback goes through anyway
+because it predates Permissions-Policy. The demo was shipped as `limited` on
+the strength of the first half of that sentence and corrected once somebody
+pressed the button.
 
 
 ## Install

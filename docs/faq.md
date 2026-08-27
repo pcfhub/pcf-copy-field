@@ -14,8 +14,10 @@ permission rather than a fault in the control, and
 the alternative is a button that appears to work and does not, which is the
 failure mode this control was written to avoid.
 
-In the demo on this site it happens every time, because the demo sandbox denies
-the clipboard by design.
+Not something you will see in the demo on this site: the harness denies
+`navigator.clipboard`, but the control's fallback copies anyway, so the demo
+shows the working path. The message is for the environments where both are
+refused.
 
 ## Why is the button greyed out?
 

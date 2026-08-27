@@ -17,12 +17,13 @@ order: 7
   manually."** rather than pretending. This is a constraint, not a bug, and
   there is nothing to lift: the decision belongs to whoever configures the host.
 
-- **The demo on this page cannot copy at all.** PCFHub's demo harness runs
-  controls in an iframe sandboxed to `allow-scripts` on an opaque origin, with
-  no clipboard permission — the isolation that makes running third-party code
-  safe is the same thing that denies the clipboard. So pressing **Copy** in the
-  demo reliably shows the failure message. That is a faithful demonstration of
-  one real state and no demonstration at all of the other.
+- **The demo on this page copies for real** — press **Copy** and the value is
+  on your clipboard. Worth saying because it was predicted not to: PCFHub's
+  harness runs controls in an iframe sandboxed to `allow-scripts` on an opaque
+  origin with no clipboard permission, which does deny
+  `navigator.clipboard`. The `execCommand` fallback is not gated by
+  Permissions-Policy, so it succeeds where the modern API is refused — which is
+  the whole reason it is there, demonstrated rather than argued.
 
 - **Single-line only.** The control renders an `<input type="text">`. Bind it to
   a multiline column and the display truncates to one line, though a copy still
