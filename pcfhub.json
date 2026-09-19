@@ -4,6 +4,7 @@
   "name": "Copy Field",
   "tagline": "A text column with a copy-to-clipboard button and a confirmation.",
   "category": "utilities",
+  "hosts": ["canvas", "model-driven"],
   "tags": [
     "clipboard",
     "accessibility",
