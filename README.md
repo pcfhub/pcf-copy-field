@@ -5,6 +5,8 @@ A text column with a copy-to-clipboard button and a confirmation.
 [![Build](https://github.com/pcfhub/pcf-copy-field/actions/workflows/build.yml/badge.svg)](https://github.com/pcfhub/pcf-copy-field/actions/workflows/build.yml)
 [![Release](https://github.com/pcfhub/pcf-copy-field/actions/workflows/release.yml/badge.svg)](https://github.com/pcfhub/pcf-copy-field/actions/workflows/release.yml)
 
+[![Try it live on PCFHub](https://pcfhub.dev/badges/try-it-live.svg)](https://pcfhub.dev/components/pcf-copy-field)
+
 Documentation lives on [PCFHub](https://pcfhub.dev/components/pcf-copy-field), built
 from the `docs/` directory in this repository. Edit the Markdown here; the hub
 recompiles it.
