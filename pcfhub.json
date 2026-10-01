@@ -3,6 +3,7 @@
   "slug": "pcf-copy-field",
   "name": "Copy Field",
   "tagline": "A text column with a copy-to-clipboard button and a confirmation.",
+  "summary": "Adds a copy button to a text column, for the values people copy out of a form and are not allowed to edit: a case reference, an account number, a correlation id. A read-only field keeps its button.\n\n- The confirmation is announced to screen readers, not only shown\n- A copy that fails says so, rather than a button that quietly does nothing",
   "category": "utilities",
   "hosts": ["canvas", "model-driven"],
   "tags": [
