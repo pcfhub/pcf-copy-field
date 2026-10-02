@@ -90,19 +90,49 @@ if (problems.length > 0) {
      *
      * A repository that has not been through setup carries placeholders
      * everywhere. A repository that has carries them only where a human still
-     * has to write something — the README's three hand-written sections. Both
-     * are placeholders; telling the second one to run `npm run setup` sends
-     * somebody to re-run a script that will not help.
+     * has to write something — the README's three hand-written sections, and
+     * the summary in pcfhub.json. Both are placeholders; telling the second one
+     * to run `npm run setup` sends somebody to re-run a script that will not
+     * help.
+     *
+     * The summary is matched as the whole finding, not by its file: a
+     * pcfhub.json that has not been through setup carries a dozen other tokens
+     * and is the first case, not this one.
      */
-    const onlyProse = problems.every((problem) => problem.startsWith('README.md'));
+    const SUMMARY_UNWRITTEN = 'pcfhub.json still contains __SUMMARY__';
 
-    console.error(onlyProse
-        ? '\nThe README still has sections to write. Replace each placeholder with\n'
-            + 'prose, and delete the comment explaining what belongs there:\n'
-        : '\nThis repository is still the template. Run:\n\n  npm run setup\n');
+    const onlyProse = problems.every(
+        (problem) => problem.startsWith('README.md') || problem === SUMMARY_UNWRITTEN,
+    );
+
+    const readmeUnwritten = problems.some((problem) => problem.startsWith('README.md'));
+
+    if (!onlyProse) {
+        console.error('\nThis repository is still the template. Run:\n\n  npm run setup\n');
+    } else if (readmeUnwritten) {
+        console.error('\nThere is still prose only you can write. Replace each placeholder, and in\n'
+            + 'the README delete the comment explaining what belongs there:\n');
+    } else {
+        console.error('\nThe summary in pcfhub.json is still to write. Replace its placeholder:\n');
+    }
 
     for (const problem of problems) {
         console.error(`  ${problem}`);
+    }
+
+    /*
+     * Said here because nothing else in an adopted repository says it: the
+     * guide that documents the key is removed at adoption, and the hub's own
+     * validator is not asked until the placeholders are gone.
+     */
+    if (onlyProse && problems.includes(SUMMARY_UNWRITTEN)) {
+        console.error(
+            '\n  The summary is what the hub shows under "Overview" on the component page,\n'
+            + '  above the screenshots: what the control does, for somebody deciding whether\n'
+            + '  to install it. One or two paragraphs, 2,000 characters at most, written as a\n'
+            + '  JSON string with \\n\\n between blocks. The page renders paragraphs, "- "\n'
+            + '  lists, **bold** and `code`; a link or a heading is shown as typed.',
+        );
     }
 
     console.error('');
@@ -254,7 +284,9 @@ if (Array.isArray(manifest.hosts)) {
 // Still a light structural read: the manifest is matched, not parsed.
 
 const TYPES = ['field', 'dataset', 'virtual', 'grid_customizer'];
-const FRAMEWORKS = ['standard', 'react', 'react_virtual'];
+// The hub's Framework enum. A control that bundles its own React is
+// `standard` — there is no third value, and the hub rejects one.
+const FRAMEWORKS = ['standard', 'react_virtual'];
 
 const type = manifest.control?.type;
 const framework = manifest.control?.framework;
@@ -519,6 +551,29 @@ if (exists(join(root, docsPath))) {
             `${docsPath}/changelog.md is ignored — the hub builds the changelog from release notes.`,
         );
     }
+
+    /*
+     * The migration page `npm run bump` writes is the template's, unfilled,
+     * and it says so — but only on the console of the bump. pcf-kanban-board
+     * 0.4.0's bump wrote one on a minor bump that broke nothing, `git add
+     * docs` took it into the commit, and this check passed it: tagged, the hub
+     * would have published "The breaking change, in one sentence." for 0.4.0.
+     * An unfilled page is refused here; fill it in or delete it.
+     */
+    const migration = join(root, docsPath, 'migration.md');
+
+    if (exists(migration)) {
+        const text = readFileSync(migration, 'utf8');
+        const unfilled = ['The breaking change, in one sentence.', 'The concrete step.']
+            .filter((line) => text.includes(line));
+
+        if (unfilled.length > 0) {
+            problems.push(
+                `${docsPath}/migration.md is the template's page, unfilled (${unfilled.map((line) => `"${line}"`).join(', ')}). ` +
+                    'Write what changed and what to do, or delete the page if nothing broke — the hub publishes it as it stands.',
+            );
+        }
+    }
 } else {
     problems.push(`No ${docsPath}/ directory, so this component would publish with no documentation.`);
 }
@@ -698,6 +753,44 @@ if (datasetFixture && !exists(join(root, datasetFixture))) {
     problems.push(
         `pcfhub.json names demo.datasetFixture as "${datasetFixture}", which does not exist.`,
     );
+} else if (datasetFixture) {
+    /*
+     * What the file must hold depends on who reads it — the hub's
+     * DemoFixtureShape, mirrored: a dataset control or a grid host indexes
+     * `columns` and `records`; any other control reads only the `dataverse`
+     * section, a stand-in Dataverse for the calls its demo makes (pcfhub's
+     * docs/demo-harness-dataverse.md, "Field controls", 2026-09-24), and the
+     * `services` list, canned answers for an external service it declares
+     * (docs/demo-harness-service-answers.md, 2026-09-29) — one or both. The
+     * hub refuses the wrong shape at ingestion and says so only on the run.
+     */
+    const needsRows = manifest.control?.type === 'dataset' || (manifest.demo?.host ?? 'form') === 'grid';
+    let fixture = null;
+
+    try {
+        fixture = JSON.parse(readFileSync(join(root, datasetFixture), 'utf8'));
+    } catch (error) {
+        problems.push(`demo.datasetFixture "${datasetFixture}" is not valid JSON: ${error.message}`);
+    }
+
+    const isObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value);
+
+    if (fixture !== null && !isObject(fixture)) {
+        problems.push(`demo.datasetFixture "${datasetFixture}" must be a JSON object.`);
+    } else if (fixture !== null && 'services' in fixture && !Array.isArray(fixture.services)) {
+        problems.push(`demo.datasetFixture "${datasetFixture}" must have services as an array of canned answers.`);
+    } else if (fixture !== null && needsRows) {
+        for (const key of ['columns', 'records']) {
+            if (!Array.isArray(fixture[key])) {
+                problems.push(`demo.datasetFixture "${datasetFixture}" must have a ${key} array — the hub reads it as rows for this control.`);
+            }
+        }
+    } else if (fixture !== null && !isObject(fixture.dataverse) && !Array.isArray(fixture.services)) {
+        problems.push(
+            `demo.datasetFixture "${datasetFixture}" must have a dataverse object or a services array — a ` +
+            'control without a dataset property reads nothing else from it.',
+        );
+    }
 }
 
 // ---------------------------------------------------------------- demo host
@@ -770,10 +863,11 @@ if (fidelity && fidelity !== 'none' && exists(join(root, 'out'))) {
  * The version, in every place the repository keeps one.
  *
  * `release-reusable.yml` already checks this — against every manifest in the
- * tree *and* against `Solution.xml` — but it does so on a Windows runner,
- * after the pack, on a tag that has already been pushed. So the failure mode
- * it produces is: delete the tag locally and remotely, fix, retag. That is the
- * same check, two seconds earlier, before any of that is possible.
+ * tree *and* against `Solution.xml` — and it runs first, before anything is
+ * installed or built, so it costs seconds rather than a pack. What it cannot
+ * avoid is that it runs on a tag that has already been pushed. So the failure
+ * mode it produces is: delete the tag locally and remotely, fix, retag. This
+ * is the same check, before the tag exists.
  *
  * A failure rather than a warning, because a disagreement has no benign
  * reading: one of the three files was edited and the others were not, and
