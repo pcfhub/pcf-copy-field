@@ -361,6 +361,47 @@ check('renders on a host that publishes no column metadata', Boolean(mount({ hos
 
     check('a re-render with an unchanged value leaves what the user is typing alone', held.value === 'half-typed', held.value);
 
+    /*
+     * The platform echoes each write back late and **out of order** — typing
+     * "pase laur" on a real form produced passes carrying "pase laur",
+     * "pase lau", "pase laur" (measured 2026-09-13). A guard comparing
+     * against the latest value alone takes the late echo as the form's own
+     * change, writes it into the box, loses what was typed after it, and
+     * throws the caret to the end. Typed in the middle on purpose: at the end
+     * of the field a caret jump is invisible. The template's case, ported.
+     */
+    const echoing = mount({ value: 'INV-2026' });
+    const box = echoing.find('.CopyField-input');
+
+    box.setSelectionRange(3, 3);
+    dom.user.type(box, 'xyz');
+    echoing.update({ value: 'INVxyz-2026' });
+    echoing.update({ value: 'INVxy-2026' });
+    echoing.update({ value: 'INVx-2026' });
+
+    check('a late echo of an earlier keystroke does not undo what was typed after it', box.value === 'INVxyz-2026', box.value);
+    check('and leaves the caret where the user was typing', box.selectionStart === 6 && box.selectionEnd === 6, `${box.selectionStart}–${box.selectionEnd}`);
+    check('and getOutputs still hands back the latest value', echoing.outputs().value === 'INVxyz-2026', JSON.stringify(echoing.outputs()));
+
+    /*
+     * PCFHub's demo never writes an output back and re-renders — on a width,
+     * a theme, a locale — with the preset's value as it always was (measured
+     * on pcf-input-mask's demo, 2026-09-28). A host repeating itself is not
+     * news, or every such pass wipes what the visitor typed.
+     */
+    const demo = mount({ value: 'INV-2026' });
+    const demoBox = demo.find('.CopyField-input');
+
+    demoBox.setSelectionRange(8, 8);
+    dom.user.type(demoBox, '-01');
+    demo.update({ value: 'INV-2026', dark: true });
+
+    check('a host repeating its last value does not undo the edit — the hub demo re-renders that way', demoBox.value === 'INV-2026-01', demoBox.value);
+
+    echoing.update({ value: 'Set by a script' });
+
+    check('but a value the control never wrote is taken from the form', box.value === 'Set by a script', box.value);
+
     /* --------------------------------------------------- what destroy owes */
 
     /*

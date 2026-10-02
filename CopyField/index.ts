@@ -50,6 +50,26 @@ export class CopyField implements ComponentFramework.StandardControl<IInputs, IO
     private notifyOutputChanged!: () => void;
     private value = '';
 
+    /**
+     * Every value this control handed the platform recently, newest last.
+     *
+     * Each `notifyOutputChanged` comes back as an `updateView` carrying the
+     * value just written — and **not necessarily in order**: typing "pase
+     * laur" on a real form produced passes carrying "pase laur", "pase lau",
+     * "pase laur" (measured 2026-09-13). A value found here is an echo
+     * whatever its order; one never written is the form's own — a script, a
+     * business rule, a refresh — and is taken, and the list starts again.
+     */
+    private written: string[] = [];
+
+    /**
+     * The value the host handed over last time. Equal to it is not news:
+     * PCFHub's demo never writes an output back and re-renders with the
+     * preset's value as it always was (measured on pcf-input-mask's demo,
+     * 2026-09-28), which taken as a change wipes what the visitor typed.
+     */
+    private lastIncoming: string | undefined = undefined;
+
     /** Cleared on the next copy, so two copies in a row re-announce. */
     private confirmationTimer: number | undefined;
 
@@ -203,9 +223,16 @@ export class CopyField implements ComponentFramework.StandardControl<IInputs, IO
 
         const incoming = parameter.raw ?? '';
 
-        // Guarded, not assigned unconditionally: writing `value` while the user
-        // is typing moves the caret to the end of the field on every keystroke.
-        if (incoming !== this.value) {
+        // Guarded twice. A browser moves the caret to the end whenever `value`
+        // is assigned something different from what the box holds, so a late
+        // echo of an earlier keystroke both loses what was typed after it and
+        // throws the user to the end of the field. See `written`.
+        const repeated = incoming === this.lastIncoming;
+
+        this.lastIncoming = incoming;
+
+        if (!repeated && incoming !== this.value && !this.written.includes(incoming)) {
+            this.written = [];
             this.value = incoming;
             this.input.value = incoming;
         }
@@ -329,6 +356,15 @@ export class CopyField implements ComponentFramework.StandardControl<IInputs, IO
 
     private onInput = (): void => {
         this.value = this.input.value;
+
+        // Bounded: a form open all day should not keep every keystroke. 32 is
+        // far more than the one-keystroke lag measured.
+        this.written.push(this.value);
+
+        if (this.written.length > 32) {
+            this.written.shift();
+        }
+
         this.notifyOutputChanged();
     };
 
