@@ -8,6 +8,10 @@ order: 1
 
 A text column with a copy-to-clipboard button and a confirmation.
 
+:::callout{type=warning}
+**Reference example · built with AI.** This control was written with AI (Claude) and tested on a live Dataverse form; its code has not been reviewed line by line. It is published as a worked example and is not maintained — read the source and [SPEC.md](https://github.com/pcfhub/pcf-copy-field/blob/main/SPEC.md) (what was measured on the form) before you use it. Fixes are not guaranteed.
+:::
+
 ::image{src=media/at-rest.png alt="A form field labelled Account Number holding ABCO9M32, with a copy icon at the right-hand end of the field."}
 
 Pressing the button swaps the icon for a checkmark and writes the confirmation

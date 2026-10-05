@@ -12,6 +12,8 @@
     "read-only",
     "field"
   ],
+  "supportLevel": "reference",
+  "builtWith": "ai",
   "control": {
     "namespace": "PCFHub",
     "constructor": "CopyField",

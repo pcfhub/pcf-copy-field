@@ -2,6 +2,8 @@
 
 A text column with a copy-to-clipboard button and a confirmation.
 
+> **Reference example · built with AI.** This control was written with AI (Claude) and tested on a live Dataverse form; its code has not been reviewed line by line. It is published as a worked example and is not maintained — read the source and [`SPEC.md`](SPEC.md) (what was measured on the form) before you use it. Fixes are not guaranteed.
+
 [![Build](https://github.com/pcfhub/pcf-copy-field/actions/workflows/build.yml/badge.svg)](https://github.com/pcfhub/pcf-copy-field/actions/workflows/build.yml)
 [![Release](https://github.com/pcfhub/pcf-copy-field/actions/workflows/release.yml/badge.svg)](https://github.com/pcfhub/pcf-copy-field/actions/workflows/release.yml)
 
@@ -18,7 +20,6 @@ recompiles it.
 
 ![The same field after copying: a green checkmark in place of the copy icon, the blue focus underline along the bottom of the field, and the text Copied to the clipboard beneath it.](media/copied.png)
 
-
 ## What it does
 
 Adds a copy-to-clipboard button to a bound `SingleLine.Text` column, with a
@@ -30,7 +31,6 @@ Built for the read-only value: a case reference, a generated account number, an
 API key. The platform gives those no copy affordance at all, so people select
 the text by hand and hope they caught the whole string.
 
-
 ## Properties
 
 | Name | Type | Usage | Notes |
@@ -40,7 +40,6 @@ the text by hand and hope they caught the whole string.
 
 The button's accessible name is built at runtime from the field's label on the
 current form, so it is not a property. Full reference: [docs/api.md](docs/api.md).
-
 
 ## On the hub
 
@@ -53,7 +52,6 @@ third-party controls to `allow-scripts` on an opaque origin, which denies
 because it predates Permissions-Policy. The demo was shipped as `limited` on
 the strength of the first half of that sentence and corrected once somebody
 pressed the button.
-
 
 ## Install
 
