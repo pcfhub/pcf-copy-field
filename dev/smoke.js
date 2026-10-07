@@ -194,7 +194,44 @@ check('and so does a read-only form', mount({ disabled: true }).find('.CopyField
 
 check('a validation error is shown', mount({ error: true }).text('.CopyField-message') === host.DEFAULTS.errorMessage);
 
-check('renders on a host that publishes no column metadata', Boolean(mount({ host: 'canvas' }).find('.CopyField-input')));
+/*
+ * The column's limit, and only a column's.
+ *
+ * A canvas app hands the property an `attributes` that describes no column:
+ * `MaxLength: 100` for a literal, a variable and an 850-character Dataverse
+ * column alike (a published canvas app, 2026-10-06). Through 0.2.1 the control
+ * took it, and every canvas field stopped at 100 characters.
+ */
+const limited = mount();
+
+check("a form's column limits the input", limited.find('.CopyField-input').maxLength === 200, `maxLength: ${limited.find('.CopyField-input').maxLength}`);
+
+const canvasAttributes = host.createContext({ host: 'canvas' }).parameters.value.attributes;
+
+check(
+    'the rig\'s canvas host reports what a canvas app reports: 100, and no table',
+    canvasAttributes.MaxLength === 100 && canvasAttributes.EntityLogicalName === '' && canvasAttributes.LogicalName === 'value',
+    JSON.stringify(canvasAttributes),
+);
+
+const canvas = mount({ host: 'canvas', value: '' });
+const canvasBox = canvas.find('.CopyField-input');
+
+check('renders in a canvas app', Boolean(canvasBox));
+
+check('a canvas app\'s 100 is not taken for a column\'s limit', !(canvasBox.maxLength >= 0), `maxLength: ${canvasBox.maxLength}`);
+
+dom.user.type(canvasBox, 'y'.repeat(130));
+
+check(
+    'so 130 characters typed in a canvas app are 130 characters written',
+    canvasBox.value.length === 130 && String(canvas.outputs().value).length === 130,
+    `box: ${canvasBox.value.length}, output: ${String(canvas.outputs().value).length}`,
+);
+
+check('the open security a canvas app reports leaves the input editable', canvasBox.disabled === false);
+
+check('and DisplayMode.View in a canvas app still disables it', mount({ host: 'canvas', disabled: true }).find('.CopyField-input').disabled === true);
 
 /* ------------------------------------------------------------ the clipboard */
 

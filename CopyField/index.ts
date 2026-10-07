@@ -27,6 +27,24 @@ const ICON_PATHS = {
 } as const;
 
 /**
+ * The column behind a bound property, when there is one.
+ *
+ * A model-driven form describes the column in `attributes`. A canvas app hands
+ * over an `attributes` too, for every source, and it describes the *property*:
+ * an empty `EntityLogicalName`, the property's own name as `LogicalName`, and
+ * `MaxLength: 100` whatever the text is bound to (read in a published canvas
+ * app, 2026-10-06). So `attributes` being there says nothing; a table's name in
+ * it does.
+ */
+function columnOf<T extends object>(parameter: { attributes?: T }): T | undefined {
+    const attributes = parameter.attributes as (T & { EntityLogicalName?: unknown }) | undefined;
+
+    return typeof attributes?.EntityLogicalName === 'string' && attributes.EntityLogicalName !== ''
+        ? attributes
+        : undefined;
+}
+
+/**
  * A bound text column, plus a button that puts its value on the clipboard.
  *
  * The interesting part of this control is not the copying. It is that the
@@ -258,10 +276,11 @@ export class CopyField implements ComponentFramework.StandardControl<IInputs, IO
         // string is a button that lies about having done something.
         this.button.disabled = this.value === '';
 
-        // `attributes` is optional because a canvas app has no column metadata
-        // at all. That single `?` is the whole canvas/model-driven difference:
-        // narrow behaviour when it is present, do not require it.
-        const maxLength = parameter.attributes?.MaxLength;
+        // The column's limit, and only a column's. A canvas app reports
+        // `MaxLength: 100` for a property bound to anything at all, and through
+        // 0.2.1 that capped every canvas field at 100 characters. See
+        // `columnOf`: narrow behaviour when there is a column, do not invent one.
+        const maxLength = columnOf(parameter)?.MaxLength;
 
         if (maxLength !== undefined) {
             this.input.maxLength = maxLength;

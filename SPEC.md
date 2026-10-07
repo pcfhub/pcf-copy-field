@@ -41,6 +41,42 @@ is that an unchecked `security` renders "no value" where the truth is "not
 allowed to see it". Here the copy button has to go with it, or the control
 offers to put a value on the clipboard that the user may not read.
 
+**A canvas app reports a maximum length for no column.** Through 0.2.1 this
+file, the control's comments, its rig and `docs/canvas.md` all said a canvas
+binding has no `attributes`, so the input there was unbounded. It has one, for
+every source, and it describes the *property*: an empty `EntityLogicalName`,
+`value` as `LogicalName`, and `MaxLength: 100` (a probe control in a published
+canvas app, 2026-10-06; `.probe-kit/attributes-probe` beside this repository).
+The control set the input's `maxLength` from it. Watched in a published canvas
+app on 7 October 2026 with the build the environment had (0.2.0; the line is
+the same in 0.2.1), typing 130 characters at the end of each field:
+
+| Bound to | `maxlength` | Held | After typing 130 more |
+| --- | --- | --- | --- |
+| `"INV-2026-00417"` | 100 | 14 | 100 |
+| a 150-character formula | 100 | 150 | 150 — nothing could be typed |
+| a Dataverse text column, 850 long on a form | 100 | 25 | 100 |
+| nothing | 100 | 0 | 100 |
+
+**The fix is one question**: `columnOf` in `index.ts` takes `attributes` as a
+column's only when `EntityLogicalName` names a table, and the limit is read
+through it. With 0.2.2 in the same app: no `maxlength` attribute on any of the
+four, and 144, 280, 155 and 130 characters after the same typing, each read
+back by a label as `Len(control.value)`. On a model-driven form 0.2.2 still
+takes the column's limit: `maxlength="160"` on the account name, which is 160
+in the table.
+
+**The rig was the reason nothing failed.** `dev/host.js` modelled canvas as
+`attributes: undefined` and `security: undefined`. It now hands over the
+placeholder as read and the open `security` a canvas app reports, and the
+form's default limit is 200 so a test can tell it from canvas's 100. Against
+the 0.2.1 code two of the new assertions fail; against 0.2.2 none.
+
+**Getting 0.2.2 into the app.** A Studio session that was open before the
+import published an edit and the old bundle together. Opening the app again
+after the import brought "Update code components"; accepting it left Save
+enabled, and save then publish moved the player from 6,192 bytes to 6,513.
+
 ## Looking like the form it is on
 
 The first release did not, and the reason is worth writing down because it is
@@ -142,6 +178,11 @@ was wrong within one release.
 
 ## Not verified
 
+- **A canvas source other than a literal, a formula and Dataverse.** No
+  SharePoint, Excel or SQL text was bound. The placeholder was the same for
+  every source read, so nothing here is expected to depend on it.
+- **A custom page, and a phone player.** The canvas readings are a published
+  canvas app in a desktop browser.
 - ~~That the clipboard fails in the harness.~~ **Settled, and settled against
   the guess** — see Demo above. It stayed wrong exactly as long as nobody
   pressed the button, which is the argument for the harness test §Verification

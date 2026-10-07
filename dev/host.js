@@ -59,8 +59,46 @@
 
     var HOSTS = {
         'model-driven': { label: 'model-driven form', publishesTheme: true, publishesMetadata: true },
-        canvas: { label: 'canvas app', publishesTheme: false, publishesMetadata: false },
+        /*
+         * No column metadata, and an `attributes` all the same. A canvas app
+         * describes the *property*: see `canvasAttributes`.
+         */
+        canvas: { label: 'canvas app', publishesTheme: false, publishesMetadata: false, describesNoColumn: true },
     };
+
+    /**
+     * What a bound property reported for `security` in a canvas app
+     * (2026-10-06): never `undefined`, always open.
+     */
+    var CANVAS_SECURITY = { editable: true, readable: true, secured: false };
+
+    /**
+     * `attributes` on a bound text property in a published canvas app, as read
+     * on 2026-10-06 and the same for a literal, a variable, a collection and a
+     * Dataverse column: the property's own name where a column's would be, no
+     * table, and **`MaxLength: 100` whatever the source allows**. The loan
+     * name it was read against is 850 characters long on a form.
+     */
+    function canvasAttributes(name) {
+        return {
+            EntityLogicalName: '',
+            LogicalName: name,
+            DisplayName: name,
+            RequiredLevel: 0,
+            IsSecured: false,
+            SourceType: null,
+            DefaultValue: '',
+            ImeMode: 0,
+            MaxLength: 100,
+            MinValue: -100000000000,
+            MaxValue: 100000000000,
+            Precision: 2,
+            Behavior: 0,
+            Options: null,
+            Type: 'string',
+            Format: 'Text',
+        };
+    }
 
     var DEFAULTS = {
         host: 'model-driven',
@@ -74,13 +112,17 @@
         errorMessage: 'This value is not in the expected format.',
         dark: undefined,
         rtl: false,
-        maxLength: 100,
+        // The form's column. 200 and not 100, so a test can tell the column's
+        // limit from the 100 a canvas app reports for no column at all.
+        maxLength: 200,
+        table: 'invoice',
     };
 
     function createContext(options) {
         var o = Object.assign({}, DEFAULTS, options || {});
         var host = HOSTS[o.host] || HOSTS['model-driven'];
-        var security = SECURITY[o.security];
+        var security =
+            host.describesNoColumn && o.security === 'none' ? Object.assign({}, CANVAS_SECURITY) : SECURITY[o.security];
 
         var getString =
             o.getString
@@ -93,8 +135,15 @@
                 value: {
                     raw: o.value,
                     attributes: host.publishesMetadata
-                        ? { MaxLength: o.maxLength, LogicalName: 'invoicenumber', DisplayName: o.label }
-                        : undefined,
+                        ? {
+                              MaxLength: o.maxLength,
+                              EntityLogicalName: o.table,
+                              LogicalName: 'invoicenumber',
+                              DisplayName: o.label,
+                          }
+                        : host.describesNoColumn
+                          ? canvasAttributes('value')
+                          : undefined,
                     security: security,
                     error: o.error,
                     errorMessage: o.error ? o.errorMessage : undefined,
@@ -211,6 +260,8 @@
         SECURITY: SECURITY,
         HOSTS: HOSTS,
         DEFAULTS: DEFAULTS,
+        CANVAS_SECURITY: CANVAS_SECURITY,
+        canvasAttributes: canvasAttributes,
         createContext: createContext,
         installClipboard: installClipboard,
         captureRegistration: captureRegistration,

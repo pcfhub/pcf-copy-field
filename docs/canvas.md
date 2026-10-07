@@ -31,8 +31,9 @@ Patch(Cases, ThisItem, { 'Case number': CopyField1.Value })
 
 ## What a canvas app does not have
 
-There is no column metadata behind a canvas binding, so two behaviours that
-appear on a model-driven form are simply absent here rather than broken:
+A canvas app does not describe the column behind a binding, even when the
+value comes from Dataverse, so two behaviours that appear on a model-driven
+form are absent here rather than broken:
 
 - **No maximum length.** A model-driven form takes it from the column. In canvas
   there is nothing to take it from, so the input is unbounded — enforce it in
@@ -40,8 +41,20 @@ appear on a model-driven form are simply absent here rather than broken:
 - **No field-level security.** The "you do not have access to this value" state
   cannot occur, because canvas has no per-column permission to report.
 
-Neither needs configuration. The control narrows its behaviour when the metadata
-is there and does without when it is not.
+Neither needs configuration. The control narrows its behaviour when there is a
+column and does without when there is not.
+
+:::callout{type=warning}
+**0.2.1 and earlier stopped every canvas field at 100 characters.** A canvas
+app reports a maximum length of 100 for any text property, bound to anything,
+and those versions believed it: a Dataverse column that takes 850 characters on
+a form took 100 here, and a value already longer than 100 could not be typed
+into at all. 0.2.2 takes a limit only from a real column.
+
+Importing 0.2.2 does not update an app that already has the control. Open the
+app in Studio, accept the update if it is offered, then **save and publish** —
+if Save is greyed out, change any formula first.
+:::
 
 :::callout{type=info}
 `DisplayMode` works as expected: `DisplayMode.View` disables the input and keeps
