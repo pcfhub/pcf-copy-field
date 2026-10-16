@@ -44,11 +44,16 @@
     'use strict';
 
     var STRINGS = {
-        CopyField_Name: 'Copy Field',
-        CopyField_NoAccess: 'You do not have access to this value.',
-        CopyField_CopyLabel: 'Copy {0}',
-        CopyField_Copied: 'Copied',
-        CopyField_CopyFailed: 'Could not copy',
+        CopyField_Name: "Copy Field",
+        CopyField_Desc: "A text column with a copy-to-clipboard button and a confirmation.",
+        value_Name: "Value",
+        value_Desc: "The column this control reads and writes.",
+        placeholder_Name: "Placeholder",
+        placeholder_Desc: "Hint text shown while the field is empty.",
+        CopyField_NoAccess: "You do not have access to this value.",
+        CopyField_CopyLabel: "Copy {0}",
+        CopyField_Copied: "Copied to the clipboard.",
+        CopyField_CopyFailed: "Could not copy. Select the text and copy it manually.",
     };
 
     var SECURITY = {
